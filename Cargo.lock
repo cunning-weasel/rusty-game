@@ -2498,6 +2498,7 @@ dependencies = [
 name = "rusty_game"
 version = "0.1.0"
 dependencies = [
+ "rand",
  "rusty_engine",
 ]
 
