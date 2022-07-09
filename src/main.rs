@@ -2,20 +2,17 @@ use rusty_engine::prelude::*;
 
 // game state struct
 struct GameState {
-    high_score: u32,
-    current_score: u32,
-    enemy_labels: Vec<String>,
-    spawn_timer: Timer,
+    health_amount: u8,
+    lost: bool,
 }
 
 // default game state
 impl Default for GameState {
     fn default() -> Self {
         Self {
-            high_score: 0,
-            current_score: 0,
-            enemy_labels: Vec::new(),
-            spawn_timer: Timer::from_seconds(1.0, false),
+            health_amount: 0,
+            lost: false,
+
         }
     }
 }
@@ -24,12 +21,15 @@ fn main() {
     // mut as we need to keep track of game-state
     let mut game = Game::new();
 
+    // audio
+    game.audio_manager.play_music(MusicPreset::WhimsicalPopsicle, 0.2);
+
     // setup game
-    let player = game.add_sprite("player", SpritePreset::RacingCarBlue);
-    player.translation = Vec2::new(200.0, -300.0);
-    player.rotation = RIGHT;
-    player.scale = 1.0;
-    player.layer = 999.0;
+    let player1 = game.add_sprite("player1", SpritePreset::RacingCarBlue);
+    player1.translation = Vec2::new(-500.0, 0.0);
+    player1.rotation = RIGHT;
+    player1.collision = true;
+    player1.layer = 20.0;
 
     game.add_logic(game_logic);
     game.run(GameState::default());
@@ -37,7 +37,7 @@ fn main() {
 
 fn game_logic(engine: &mut Engine, game_state: &mut GameState) {
     // game logic
-
+    
 
 
     // game_state.current_score += 1;
