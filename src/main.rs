@@ -58,6 +58,10 @@ fn main() {
         obstacle.translation.y = thread_rng().gen_range(-300.0..300.0);
     }
 
+    // health
+    let health_message = game.add_text("health message", "Health: 5");
+    health_message.translation = Vec2::new(550.0, 320.0);
+
     game.add_logic(game_logic);
     game.run(GameState::default());
 }
@@ -94,6 +98,16 @@ fn game_logic(engine: &mut Engine, game_state: &mut GameState) {
     let player1 = engine.sprites.get_mut("player1").unwrap();
     player1.translation.y += direction * PLAYER_SPEED * engine.delta_f32;
     player1.rotation = direction * 0.15;
+
+    // handling health with collisions
+    let health_message = engine.texts.get_mut("health_message").unwrap();
+
+    for event in engine.collision_events.drain(..) {
+        if !event.pair.either_contains("player1") || event.state.is_end() {
+            continue;
+        }
+    }
+
 
     // player dies
     if player1.translation.y > 360.0 || player1.translation.y < -360.0 {
