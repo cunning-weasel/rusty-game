@@ -1,6 +1,11 @@
 use rand::prelude::*;
 use rusty_engine::prelude::*;
 
+// glaobal road speed - check out game logic
+const ROAD_SPEED: f32 = 400.0;
+// speed moving up and down in px/ second
+const PLAYER_SPEED: f32 = 250.0;
+
 // game state struct
 struct GameState {
     health_amount: u8,
@@ -8,17 +13,14 @@ struct GameState {
 }
 
 // default game state
-impl Default for GameState {
-    fn default() -> Self {
-        Self {
-            health_amount: 0,
-            lost: false,
-        }
-    }
-}
-
-// glaobal road speed - check out game logic
-const ROAD_SPEED: f32 = 400.0;
+// impl Default for GameState {
+//     fn default() -> Self {
+//         Self {
+//             health_amount: 0,
+//             lost: false,
+//         }
+//     }
+// }
 
 fn main() {
     // mut as we need to keep track of game-state
@@ -48,6 +50,9 @@ fn main() {
         SpritePreset::RacingBarrelBlue,
         SpritePreset::RacingBarrelRed,
         SpritePreset::RacingConeStraight,
+        SpritePreset::RollingBlockCorner,
+        SpritePreset::RollingBlockSquare,
+        SpritePreset::RollingBlockSmall,
     ];
 
     for (i, preset) in obstacle_presets.into_iter().enumerate() {
@@ -59,23 +64,51 @@ fn main() {
     }
 
     // health
-    let health_message = game.add_text("health message", "Health: 5");
+    let health_message = game.add_text("health_message", "Health: 5");
     health_message.translation = Vec2::new(550.0, 320.0);
 
     game.add_logic(game_logic);
-    game.run(GameState::default());
+    game.run(GameState {
+        health_amount: 5,
+        lost: false,
+    });
 }
 
 fn game_logic(engine: &mut Engine, game_state: &mut GameState) {
+    // Don't run any more game logic if the game has ended
+    if game_state.lost {
+        return;
+    }
+
     // game logic - called once every frame
     let mut direction = 0.0;
-    // speed moving up and down in px/ second
-    const PLAYER_SPEED: f32 = 250.0;
+
     // handle movement & player inputs
-    if engine.keyboard_state.pressed(KeyCode::Up) {
+    let mut direction = 0.0;
+    if engine
+        .keyboard_state
+        .pressed_any(&[KeyCode::Up, KeyCode::W, KeyCode::Comma])
+    {
         direction += 1.0;
-    } else if engine.keyboard_state.pressed(KeyCode::Down) {
+    }
+
+    if engine
+        .keyboard_state
+        .pressed_any(&[KeyCode::Down, KeyCode::S, KeyCode::O])
+    {
         direction -= 1.0;
+    }
+
+    // move player sprite
+    let player1 = engine.sprites.get_mut("player1").unwrap();
+    player1.translation.y += direction * PLAYER_SPEED * engine.delta_f32;
+    player1.rotation = direction * 0.15;
+
+    let player1 = engine.sprites.get_mut("player1").unwrap();
+    player1.translation.y += direction * PLAYER_SPEED * engine.delta_f32;
+    player1.rotation = direction * 0.15;
+    if player1.translation.y < -360.0 || player1.translation.y > 360.0 {
+        game_state.health_amount = 0;
     }
 
     // move road objects
@@ -95,24 +128,27 @@ fn game_logic(engine: &mut Engine, game_state: &mut GameState) {
         }
     }
 
-    let player1 = engine.sprites.get_mut("player1").unwrap();
-    player1.translation.y += direction * PLAYER_SPEED * engine.delta_f32;
-    player1.rotation = direction * 0.15;
-
     // handling health with collisions
     let health_message = engine.texts.get_mut("health_message").unwrap();
 
     for event in engine.collision_events.drain(..) {
+        // We don't care if obstacles collide with each other or collisions end
         if !event.pair.either_contains("player1") || event.state.is_end() {
             continue;
         }
+        if game_state.health_amount > 0 {
+            game_state.health_amount -= 1;
+            health_message.value = format!("Health: {}", game_state.health_amount);
+            engine.audio_manager.play_sfx(SfxPreset::Impact3, 0.5);
+        }
     }
-
 
     // player dies
-    if player1.translation.y > 360.0 || player1.translation.y < -360.0 {
-        game_state.health_amount = 0;
+    if game_state.health_amount == 0 {
+        game_state.lost = true;
+        let game_over = engine.add_text("game over", "Game Over");
+        game_over.font_size = 128.0;
+        engine.audio_manager.stop_music();
+        engine.audio_manager.play_sfx(SfxPreset::Jingle3, 0.5);
     }
-    // game_state.current_score += 1;
-    // print!("current score: {}", game_state.current_score);
 }
