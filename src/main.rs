@@ -181,4 +181,5 @@ Instead of ignoring obstacles that collide with each other, take one of the coll
 Make it so you can't hit the same obstacle twice (currently if you wiggle back and forth you can run into the same obstacle multiple times)
 
 Challegenee to self - after the above, get this thing deployed and accessible on herkoku / own home server/ lab
+https://github.com/CleanCut/rusty_engine/blob/main/scenarios/car_shoot.md
 */
